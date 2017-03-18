@@ -2,8 +2,6 @@ package com.example.android.data;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
@@ -13,7 +11,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.example.android.data.database.DBHelper;
+import com.example.android.data.database.DataSource;
 import com.example.android.data.model.DataItem;
 import com.example.android.data.sample.SampleDataProvider;
 
@@ -27,15 +25,15 @@ public class MainActivity extends AppCompatActivity {
     public static final String MY_GLOBAL_PREFS = "my_global_prefs";
     List<DataItem> dataItemList = SampleDataProvider.dataItemList;
 
-    SQLiteDatabase database;
+    DataSource mDataSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        SQLiteOpenHelper dbHelper = new DBHelper(this);
-        database = dbHelper.getWritableDatabase();
+        mDataSource = new DataSource(this);
+        mDataSource.open();
         Toast.makeText(this, "Database acquired", Toast.LENGTH_SHORT).show();
 
         Collections.sort(dataItemList, new Comparator<DataItem>() {
@@ -56,6 +54,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         recyclerView.setAdapter(adapter);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mDataSource.close();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mDataSource.open();
     }
 
     @Override
