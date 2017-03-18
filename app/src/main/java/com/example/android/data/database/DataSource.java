@@ -1,8 +1,12 @@
 package com.example.android.data.database;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import com.example.android.data.model.DataItem;
 
 /**
  * Created by timshum on 3/18/2017.
@@ -25,5 +29,15 @@ public class DataSource {
 
     public void close() {
         mDbHelper.close();
+    }
+
+    public DataItem createItem(DataItem item) {
+        ContentValues values = item.toValues();
+        mDatabase.insert(ItemsTable.TABLE_ITEMS, null, values);
+        return item;
+    }
+
+    public long getDataItemsCount() {
+        return DatabaseUtils.queryNumEntries(mDatabase, ItemsTable.TABLE_ITEMS);
     }
 }
