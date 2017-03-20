@@ -2,7 +2,6 @@ package com.example.android.data;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteException;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
@@ -16,8 +15,6 @@ import com.example.android.data.database.DataSource;
 import com.example.android.data.model.DataItem;
 import com.example.android.data.sample.SampleDataProvider;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,31 +32,18 @@ public class MainActivity extends AppCompatActivity {
 
         mDataSource = new DataSource(this);
         mDataSource.open();
-        Toast.makeText(this, "Database acquired", Toast.LENGTH_SHORT).show();
+        mDataSource.seedDatabase(dataItemList);
 
-        long numItems = mDataSource.getDataItemsCount();
-        if (numItems == 0) {
-            for (DataItem item :
-                    dataItemList) {
-                try {
-                    mDataSource.createItem(item);
-                } catch (SQLiteException e) {
-                    e.printStackTrace();
-                }
-            }
-            Toast.makeText(this, "Data inserted!", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "Data already inserted!", Toast.LENGTH_SHORT).show();
-        }
+//        Collections.sort(dataItemList, new Comparator<DataItem>() {
+//            @Override
+//            public int compare(DataItem o1, DataItem o2) {
+//                return o1.getItemName().compareTo(o2.getItemName());
+//            }
+//        });
 
-        Collections.sort(dataItemList, new Comparator<DataItem>() {
-            @Override
-            public int compare(DataItem o1, DataItem o2) {
-                return o1.getItemName().compareTo(o2.getItemName());
-            }
-        });
+        List<DataItem> listFromDB = mDataSource.getAllItems();
 
-        DataItemAdapter adapter = new DataItemAdapter(this, dataItemList);
+        DataItemAdapter adapter = new DataItemAdapter(this, listFromDB);
 
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         boolean grid = settings.getBoolean(getString(R.string.pref_display_grid), false);
