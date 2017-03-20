@@ -4,11 +4,16 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.android.data.database.DataSource;
@@ -21,39 +26,59 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int SIGNIN_REQUEST = 1001;
     public static final String MY_GLOBAL_PREFS = "my_global_prefs";
+    private static final String TAG = "MainActivity";
     List<DataItem> dataItemList = SampleDataProvider.dataItemList;
 
     DataSource mDataSource;
+    List<DataItem> listFromDB;
+    DrawerLayout mDrawerLayout;
+    ListView mDrawerList;
+    String[] mCategories;
+    RecyclerView mRecyclerView;
+    DataItemAdapter mItemAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Code to manage sliding navigation drawer
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mCategories = getResources().getStringArray(R.array.categories);
+        mDrawerList = (ListView) findViewById(R.id.left_drawer);
+        mDrawerList.setAdapter(new ArrayAdapter<>(this,
+                R.layout.drawer_list_item, mCategories));
+        mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String category = mCategories[position];
+                Toast.makeText(MainActivity.this, "You chose " + category,
+                        Toast.LENGTH_SHORT).show();
+                mDrawerLayout.closeDrawer(mDrawerList);
+                displayDataItems(category);
+            }
+        });
+        //  end of navigation drawer
+
         mDataSource = new DataSource(this);
         mDataSource.open();
         mDataSource.seedDatabase(dataItemList);
 
-//        Collections.sort(dataItemList, new Comparator<DataItem>() {
-//            @Override
-//            public int compare(DataItem o1, DataItem o2) {
-//                return o1.getItemName().compareTo(o2.getItemName());
-//            }
-//        });
-
-        List<DataItem> listFromDB = mDataSource.getAllItems();
-
-        DataItemAdapter adapter = new DataItemAdapter(this, listFromDB);
-
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         boolean grid = settings.getBoolean(getString(R.string.pref_display_grid), false);
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.rvItems);
+        mRecyclerView = (RecyclerView) findViewById(R.id.rvItems);
         if (grid) {
-            recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
+            mRecyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         }
 
-        recyclerView.setAdapter(adapter);
+        displayDataItems(null);
+    }
+
+    private void displayDataItems(String category) {
+        listFromDB = mDataSource.getAllItems(category);
+        mItemAdapter = new DataItemAdapter(this, listFromDB);
+        mRecyclerView.setAdapter(mItemAdapter);
     }
 
     @Override
@@ -85,6 +110,14 @@ public class MainActivity extends AppCompatActivity {
                 // Show the settings screen
                 Intent settingsIntent = new Intent(this, PrefsActivity.class);
                 startActivity(settingsIntent);
+                return true;
+            case R.id.action_all_items:
+                // display all items
+                displayDataItems(null);
+                return true;
+            case R.id.action_choose_category:
+                //open the drawer
+                mDrawerLayout.openDrawer(mDrawerList);
                 return true;
         }
         return super.onOptionsItemSelected(item);

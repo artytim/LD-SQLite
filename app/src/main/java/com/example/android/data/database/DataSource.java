@@ -26,7 +26,7 @@ public class DataSource {
         this.mContext = context;
         mDbHelper = new DBHelper(mContext);
         mDatabase = mDbHelper.getWritableDatabase();
-     }
+    }
 
     public void open() {
         mDatabase = mDbHelper.getWritableDatabase();
@@ -60,12 +60,19 @@ public class DataSource {
         }
     }
 
-    public List<DataItem> getAllItems() {
+    public List<DataItem> getAllItems(String category) {
         List<DataItem> dataItems = new ArrayList<>();
 
-        Cursor cursor = mDatabase.query(ItemsTable.TABLE_ITEMS, ItemsTable.ALL_COLUMNS,
-                null, null, null, null, null);
+        Cursor cursor = null;
+        if (category == null) {
+            cursor = mDatabase.query(ItemsTable.TABLE_ITEMS, ItemsTable.ALL_COLUMNS,
+                    null, null, null, null, ItemsTable.COLUMN_NAME);
+        } else {
+            String[] categories = {category};
 
+            cursor = mDatabase.query(ItemsTable.TABLE_ITEMS, ItemsTable.ALL_COLUMNS,
+                    ItemsTable.COLUMN_CATEGORY + "=?", categories, null, null, ItemsTable.COLUMN_NAME);
+        }
         while (cursor.moveToNext()) {
             DataItem item = new DataItem();
             item.setItemId(cursor.getString(
@@ -84,7 +91,7 @@ public class DataSource {
                     cursor.getColumnIndex(ItemsTable.COLUMN_IMAGE)));
             dataItems.add(item);
         }
-
+        cursor.close();
         return dataItems;
     }
 }
